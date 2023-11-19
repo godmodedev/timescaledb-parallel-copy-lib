@@ -29,8 +29,8 @@ const (
 
 func main() {}
 
-func getFullTableName(schemaName *string, tableName *string) string {
-	return fmt.Sprintf(`"%s"."%s"`, *schemaName, *tableName)
+func getFullTableName(schemaName string, tableName string) string {
+	return fmt.Sprintf(`"%s"."%s"`, schemaName, tableName)
 }
 
 //export parallelCopy
@@ -83,20 +83,20 @@ func parallelCopy(
 		os.Exit(1)
 	}
 
-	if truncate == 1 { // Remove existing data from the table
-		dbx, err := db.Connect(postgresConnect_, overrides...)
+	dbx, err := db.Connect(postgresConnect_, overrides...)
+	if err != nil {
+		panic(err)
+	}
+	if int(truncate) == 1 { // Remove existing data from the table
+		_, err = dbx.Exec(fmt.Sprintf("TRUNCATE %s", getFullTableName(schemaName_, tableName_)))
 		if err != nil {
 			panic(err)
 		}
-		_, err = dbx.Exec(fmt.Sprintf("TRUNCATE %s", getFullTableName(&schemaName_, &tableName_)))
-		if err != nil {
-			panic(err)
-		}
+	}
 
-		err = dbx.Close()
-		if err != nil {
-			panic(err)
-		}
+	err = dbx.Close()
+	if err != nil {
+		panic(err)
 	}
 
 	var reader io.Reader
@@ -107,6 +107,7 @@ func parallelCopy(
 	defer file.Close()
 
 	reader = file
+	_ = reader
 
 	if int(headerLinesCnt) <= 0 {
 		fmt.Printf("WARNING: provided --header-line-count (%d) must be greater than 0\n", int(headerLinesCnt))
@@ -114,7 +115,7 @@ func parallelCopy(
 	}
 
 	var skip int
-	if skipHeader == 1 {
+	if int(skipHeader) == 1 {
 		skip = int(headerLinesCnt)
 
 		if verbose == 1 {
@@ -129,8 +130,8 @@ func parallelCopy(
 	for i := 0; i < int(workers); i++ {
 		wg.Add(1)
 		go processBatches(
-			&wg, batchChan, &overrides, &rowCount, &schemaName_, &tableName_, &postgresConnect_, &copyOptions_, &splitCharacter_,
-			&quoteCharacter_, &escapeCharacter_, &columns_, int(logBatches), int(batchSize),
+			&wg, batchChan, overrides, &rowCount, schemaName_, tableName_, postgresConnect_, copyOptions_, splitCharacter_,
+			quoteCharacter_, escapeCharacter_, columns_, int(logBatches), int(batchSize),
 		)
 	}
 
@@ -168,7 +169,7 @@ func parallelCopy(
 	rowRate := float64(rowsRead) / float64(took.Seconds())
 
 	res := fmt.Sprintf("COPY %d", rowsRead)
-	if verbose == 1 {
+	if int(verbose) == 1 {
 		res += fmt.Sprintf(", took %v with %d worker(s) (mean rate %f/sec)", took, int(workers), rowRate)
 	}
 	fmt.Println(res)
@@ -199,36 +200,36 @@ func report(reportingPeriod time.Duration, rowCount *int64) {
 // processBatches reads batches from channel c and copies them to the target
 // server while tracking stats on the write.
 func processBatches(
-	wg *sync.WaitGroup, c chan net.Buffers, overrides *[]db.Overrideable, rowCount *int64, schemaName *string,
-	tableName *string, postgresConnect *string, copyOptions *string, splitCharacter *string, quoteCharacter *string,
-	escapeCharacter *string, columns *string, logBatches int, batchSize int,
+	wg *sync.WaitGroup, c chan net.Buffers, overrides []db.Overrideable, rowCount *int64, schemaName string,
+	tableName string, postgresConnect string, copyOptions string, splitCharacter string, quoteCharacter string,
+	escapeCharacter string, columns string, logBatches int, batchSize int,
 ) {
-	dbx, err := db.Connect(*postgresConnect, *overrides...)
+	dbx, err := db.Connect(postgresConnect, overrides...)
 	if err != nil {
 		panic(err)
 	}
 	defer dbx.Close()
 
-	delimStr := "'" + *splitCharacter + "'"
-	if *splitCharacter == tabCharStr {
+	delimStr := "'" + splitCharacter + "'"
+	if splitCharacter == tabCharStr {
 		delimStr = "E" + delimStr
 	}
 
 	var quotes string
-	if *quoteCharacter != "" {
+	if quoteCharacter != "" {
 		quotes = fmt.Sprintf("QUOTE '%s'",
-			strings.ReplaceAll(*quoteCharacter, "'", "''"))
+			strings.ReplaceAll(quoteCharacter, "'", "''"))
 	}
-	if *escapeCharacter != "" {
+	if escapeCharacter != "" {
 		quotes = fmt.Sprintf("%s ESCAPE '%s'",
-			quotes, strings.ReplaceAll(*escapeCharacter, "'", "''"))
+			quotes, strings.ReplaceAll(escapeCharacter, "'", "''"))
 	}
 
 	var copyCmd string
-	if *columns != "" {
-		copyCmd = fmt.Sprintf("COPY %s(%s) FROM STDIN WITH DELIMITER %s %s %s", getFullTableName(schemaName, tableName), *columns, delimStr, quotes, *copyOptions)
+	if columns != "" {
+		copyCmd = fmt.Sprintf("COPY %s(%s) FROM STDIN WITH DELIMITER %s %s %s", getFullTableName(schemaName, tableName), columns, delimStr, quotes, copyOptions)
 	} else {
-		copyCmd = fmt.Sprintf("COPY %s FROM STDIN WITH DELIMITER %s %s %s", getFullTableName(schemaName, tableName), delimStr, quotes, *copyOptions)
+		copyCmd = fmt.Sprintf("COPY %s FROM STDIN WITH DELIMITER %s %s %s", getFullTableName(schemaName, tableName), delimStr, quotes, copyOptions)
 	}
 
 	for batch := range c {

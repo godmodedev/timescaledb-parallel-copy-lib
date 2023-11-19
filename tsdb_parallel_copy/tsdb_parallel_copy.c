@@ -16,7 +16,8 @@ void splitPath(char **a, char **b) {
 }
 
 static PyObject *method_tsdb_parallel_copy(PyObject *self, PyObject *args, PyObject *kwargs) {
-    char *fromFile, *postgresConnect, *dbName, *tableName = NULL;
+    char *fromFile, *postgresConnect, *tableName = NULL;
+    char *dbName = "";
     char *schemaName = "public";
     char *copyOptions = "CSV";
     char *splitCharacter = ",";
@@ -24,15 +25,15 @@ static PyObject *method_tsdb_parallel_copy(PyObject *self, PyObject *args, PyObj
     char *escapeCharacter = "";
     char *columns = "";
 
-    int *truncate = 0;
-    int *skipHeader = 0;
-    int *headerLinesCnt = 1;
-    int *workers = 1; 
-    int *batchSize = 5000;
-    int *logBatches = 0;
-    int *reportingPeriod = 0; 
-    int *verbose = 0;
-    long *limit = 0;
+    int truncate = 0;
+    int skipHeader = 0;
+    int headerLinesCnt = 1;
+    int workers = 1; 
+    int batchSize = 5000;
+    int logBatches = 0;
+    int reportingPeriod = 0; 
+    int verbose = 0;
+    long limit = 0;
 
     static char *kwlist[] = {
         "file", "url", "table_name", "db_name", "schema", "truncate", "copy_options", "split", "quote",
@@ -45,12 +46,12 @@ static PyObject *method_tsdb_parallel_copy(PyObject *self, PyObject *args, PyObj
         &headerLinesCnt, &workers, &limit, &batchSize, &logBatches, &reportingPeriod, &verbose)) 
     {
         return NULL;
-    }   
-    // splitPath(&dbName, &postgresConnect);
+    }
+    splitPath(&dbName, &postgresConnect);
 
     parallelCopy(fromFile, postgresConnect, dbName, schemaName, tableName, 
-    *truncate, copyOptions, splitCharacter, quoteCharacter, escapeCharacter, columns, *skipHeader, 
-    *headerLinesCnt, *workers, *limit, *batchSize, *logBatches, *reportingPeriod, *verbose);
+    truncate, copyOptions, splitCharacter, quoteCharacter, escapeCharacter, columns, skipHeader, 
+    headerLinesCnt, workers, limit, batchSize, logBatches, reportingPeriod, verbose);
 
     Py_RETURN_NONE;
 }

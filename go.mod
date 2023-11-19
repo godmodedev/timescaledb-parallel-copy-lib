@@ -1,11 +1,10 @@
-module github.com/timescale/timescaledb-parallel-copy
+module github.com/godmodedev/timescaledb-parallel-copy-lib
 
 go 1.13
 
 require (
-	github.com/jackc/pgconn v1.12.1
-	github.com/jackc/pgx/v4 v4.16.1
-	github.com/jmoiron/sqlx v1.2.0
-	github.com/lib/pq v1.10.6 // indirect
-	google.golang.org/appengine v1.6.5 // indirect
+	github.com/jackc/pgconn v1.14.1
+	github.com/jackc/pgx/v4 v4.18.1
+	github.com/jmoiron/sqlx v1.3.5
+	golang.org/x/crypto v0.15.0 // indirect
 )

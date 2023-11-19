@@ -1,102 +1,32 @@
 ## timescaledb-parallel-copy
 
-`timescaledb-parallel-copy` is a command line program for parallelizing
+This is a fork of [`timescaledb-parallel-copy`](//github.com/timescale/timescaledb-parallel-copy), 
+modified to be used in a Pythonic manner with any Python-based data processing workflow.
+`timescaledb-parallel-copy-lib` as it exists here is a Python package which wraps the 
+original internals from the [`timescaledb-parallel-copy`](//github.com/timescale/timescaledb-parallel-copy)
+command line program. It offers an interface for parallelizing
 PostgreSQL's built-in `COPY` functionality for bulk inserting data
 into [TimescaleDB.](//github.com/timescale/timescaledb/)
 
 ### Getting started
-You need the Go runtime (1.13+) installed, then simply `go get` this repo:
-```bash
-$ go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy@latest
-```
 
-Before using this program to bulk insert data, your database should
+TODO
+
+Before using this library to bulk insert data, your database should
 be installed with the TimescaleDB extension and the target table
 should already be made a hypertable.
-
-### Using timescaledb-parallel-copy
-If you want to bulk insert data from a file named `foo.csv` into a
-(hyper)table named `sample` in a database called `test`:
-
-```bash
-# single-threaded
-$ timescaledb-parallel-copy --db-name test --table sample --file foo.csv
-
-# 2 workers
-$ timescaledb-parallel-copy --db-name test --table sample --file foo.csv \
-    --workers 2
-
-# 2 workers, report progress every 30s
-$ timescaledb-parallel-copy --db-name test --table sample --file foo.csv \
-    --workers 2 --reporting-period 30s
-
-# Treat literal string 'NULL' as NULLs:
-$ timescaledb-parallel-copy --db-name test --table sample --file foo.csv \
-    --copy-options "NULL 'NULL' CSV"
-```
-
-Other options and flags are also available:
-
-```
-$ timescaledb-parallel-copy --help
-
-Usage of timescaledb-parallel-copy:
-  -batch-size int
-        Number of rows per insert (default 5000)
-  -columns string
-        Comma-separated columns present in CSV
-  -connection string
-        PostgreSQL connection url (default "host=localhost user=postgres sslmode=disable")
-  -copy-options string
-        Additional options to pass to COPY (e.g., NULL 'NULL') (default "CSV")
-  -db-name string
-        Database where the destination table exists
-  -escape character
-        The ESCAPE character to use during COPY (default '"')
-  -file string
-        File to read from rather than stdin
-  -header-line-count int
-        Number of header lines (default 1)
-  -limit int
-        Number of rows to insert overall; 0 means to insert all
-  -log-batches
-        Whether to time individual batches.
-  -quote character
-        The QUOTE character to use during COPY (default '"')
-  -reporting-period duration
-        Period to report insert stats; if 0s, intermediate results will not be reported
-  -schema string
-        Destination table's schema (default "public")
-  -skip-header
-        Skip the first line of the input
-  -split string
-        Character to split by (default ",")
-  -table string
-        Destination table for insertions (default "test_table")
-  -truncate
-        Truncate the destination table before insert
-  -verbose
-        Print more information about copying statistics
-  -version
-        Show the version of this tool
-  -workers int
-        Number of parallel requests to make (default 1)
-
-```
 
 ### Purpose
 
 PostgreSQL native `COPY` function is transactional and single-threaded, and may not be suitable for ingesting large
 amounts of data. Assuming the file is at least loosely chronologically ordered with respect to the hypertable's time
-dimension, this tool should give you great performance gains by parallelizing this operation, allowing users to take
+dimension, this library should give you great performance gains by parallelizing this operation, allowing users to take
 full advantage of their hardware.
 
-This tool also takes care to ingest data in a more efficient manner by roughly preserving the order of the rows. By
+This library also takes care to ingest data in a more efficient manner by roughly preserving the order of the rows. By
 taking a "round-robin" approach to sharing inserts between parallel workers, the database has to switch between chunks
 less often. This improves memory management and keeps operations on the disk as sequential as possible.
 
-### Contributing
-We welcome contributions to this utility, which like TimescaleDB is released under the Apache2 Open Source License.  The same [Contributors Agreement](//github.com/timescale/timescaledb/blob/master/CONTRIBUTING.md) applies; please sign the [Contributor License Agreement](https://cla-assistant.io/timescale/timescaledb-parallel-copy) (CLA) if you're a new contributor.
 
 #### Running Tests
 

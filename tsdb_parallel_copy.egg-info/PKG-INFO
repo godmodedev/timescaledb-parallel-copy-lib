@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: tsdb-parallel-copy
+Version: 0.0.0
+Summary: Pythonic parallel copy utility for Timescale based on their Go implementation
+Author: AIM Group
+Platform: linux
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Requires-Python: >=3.8
+License-File: LICENSE
+License-File: NOTICE

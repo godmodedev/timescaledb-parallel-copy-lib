@@ -1,0 +1,11 @@
+LICENSE
+NOTICE
+README.md
+setup.cfg
+setup.py
+tsdb_parallel_copy/tsdb_parallel_copy.go
+tsdb_parallel_copy.egg-info/PKG-INFO
+tsdb_parallel_copy.egg-info/SOURCES.txt
+tsdb_parallel_copy.egg-info/dependency_links.txt
+tsdb_parallel_copy.egg-info/not-zip-safe
+tsdb_parallel_copy.egg-info/top_level.txt

@@ -54,7 +54,6 @@ func parallelCopy(
 	logBatches C.int,
 	reportingPeriod C.int,
 	verbose C.int,
-	rowCount C.long,
 ) {
 	fromFile_ := C.GoString(fromFile)
 	postgresConnect_ := C.GoString(postgresConnect)
@@ -66,7 +65,7 @@ func parallelCopy(
 	quoteCharacter_ := C.GoString(quoteCharacter)
 	escapeCharacter_ := C.GoString(escapeCharacter)
 	columns_ := C.GoString(columns)
-	rowCount_ := int64(rowCount)
+	var rowCount int64
 
 	var overrides []db.Overrideable
 	reportingPeriod_ := time.Duration(int(reportingPeriod)) * time.Second
@@ -130,14 +129,14 @@ func parallelCopy(
 	for i := 0; i < int(workers); i++ {
 		wg.Add(1)
 		go processBatches(
-			&wg, batchChan, &overrides, &rowCount_, &schemaName_, &tableName_, &postgresConnect_, &copyOptions_, &splitCharacter_,
+			&wg, batchChan, &overrides, &rowCount, &schemaName_, &tableName_, &postgresConnect_, &copyOptions_, &splitCharacter_,
 			&quoteCharacter_, &escapeCharacter_, &columns_, int(logBatches), int(batchSize),
 		)
 	}
 
 	// Reporting thread
 	if reportingPeriod_ > (0 * time.Second) {
-		go report(reportingPeriod_, &rowCount_)
+		go report(reportingPeriod_, &rowCount)
 	}
 
 	opts := batch.Options{
@@ -165,7 +164,7 @@ func parallelCopy(
 	end := time.Now()
 	took := end.Sub(start)
 
-	rowsRead := atomic.LoadInt64(&rowCount_)
+	rowsRead := atomic.LoadInt64(&rowCount)
 	rowRate := float64(rowsRead) / float64(took.Seconds())
 
 	res := fmt.Sprintf("COPY %d", rowsRead)
